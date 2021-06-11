@@ -17,11 +17,43 @@ time_table_drop = "DROP TABLE IF EXISTS time"
 
 # CREATE TABLES
 
-staging_events_table_create= ("""
-""")
+staging_events_table_create= """
+CREATE TABLE IF NOT EXISTS staging_events(
+        artist TEXT,
+        auth TEXT,
+        firstName TEXT,
+        gender TEXT,
+        ItemInSession INT,
+        lastName TEXT,
+        length FLOAT,
+        level TEXT,
+        location TEXT,
+        method TEXT,
+        page TEXT,
+        registration TEXT,
+        sessionId INT,
+        song TEXT,
+        status INT,
+        ts BIGINT, 
+        userAgent TEXT, 
+        userId INT
+)
+"""
 
-staging_songs_table_create = ("""
-""")
+staging_songs_table_create = """
+    CREATE TABLE IF NOT EXISTS staging_songs(
+    song_id TEXT PRIMARY KEY,
+        artist_id TEXT,
+        artist_latitude FLOAT,
+        artist_longitude FLOAT,
+        artist_location TEXT,
+        artist_name VARCHAR(255),
+        duration FLOAT,
+        num_songs INT,
+        title TEXT,
+        year INT
+    )
+"""
 
 songplay_table_create = ("""
 """)
