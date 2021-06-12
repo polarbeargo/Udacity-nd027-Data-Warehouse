@@ -41,8 +41,8 @@ CREATE TABLE IF NOT EXISTS staging_events(
 """
 
 staging_songs_table_create = """
-    CREATE TABLE IF NOT EXISTS staging_songs(
-    song_id TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS staging_songs(
+        song_id TEXT PRIMARY KEY,
         artist_id TEXT,
         artist_latitude FLOAT,
         artist_longitude FLOAT,
@@ -55,8 +55,15 @@ staging_songs_table_create = """
     )
 """
 
-songplay_table_create = ("""
-""")
+songplay_table_create = """
+CREATE TABLE IF NOT EXISTS users(
+        user_id VARCHAR PRIMARY KEY NOT NULL,
+        first_name VARCHAR,
+        last_name VARCHAR,
+        gender VARCHAR,
+        level VARCHAR
+    )
+"""
 
 user_table_create = ("""
 """)
