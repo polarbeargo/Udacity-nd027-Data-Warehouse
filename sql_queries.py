@@ -65,16 +65,47 @@ CREATE TABLE IF NOT EXISTS users(
     )
 """
 
-user_table_create = ("""
-""")
+user_table_create = """
+CREATE TABLE IF NOT EXISTS users(
+        user_id VARCHAR PRIMARY KEY NOT NULL,
+        first_name VARCHAR,
+        last_name VARCHAR,
+        gender VARCHAR,
+        level VARCHAR
+    )
+"""
 
-song_table_create = ("""
-""")
+song_table_create = """
+CREATE TABLE IF NOT EXISTS songs(
+        song_id VARCHAR PRIMARY KEY NOT NULL,
+        title VARCHAR NOT NULL,
+        artist_id VARCHAR NOT NULL,
+        year INT,
+        duration FLOAT
+    )
+"""
 
 artist_table_create = ("""
+CREATE TABLE IF NOT EXISTS artists(
+        artist_id VARCHAR PRIMARY KEY NOT NULL,
+        name VARCHAR,
+        location VARCHAR,
+        latitude VARCHAR,
+        longitude VARCHAR
+    )
 """)
 
 time_table_create = ("""
+CREATE TABLE IF NOT EXISTS time
+    (
+        start_time  TIMESTAMP PRIMARY KEY SORTKEY,
+        hour        SMALLINT,
+        day         SMALLINT,
+        week        SMALLINT,
+        month       SMALLINT,
+        year        SMALLINT DISTKEY,
+        weekday     SMALLINT
+    ) 
 """)
 
 # STAGING TABLES
