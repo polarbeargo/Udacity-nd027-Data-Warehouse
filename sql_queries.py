@@ -5,6 +5,11 @@ import configparser
 config = configparser.ConfigParser()
 config.read('dwh.cfg')
 
+LOG_DATA  = config.get("S3", "LOG_DATA")
+LOG_PATH  = config.get("S3", "LOG_JSONPATH")
+SONG_DATA = config.get("S3", "SONG_DATA")
+IAM_ROLE  = config.get("IAM_ROLE","ARN")
+
 # DROP TABLES
 
 staging_events_table_drop = "DROP TABLE IF EXISTS staging_events"
@@ -111,26 +116,80 @@ CREATE TABLE IF NOT EXISTS time
 # STAGING TABLES
 
 staging_events_copy = ("""
-""").format()
+copy staging_events from {bucket}
+    credentials 'aws_iam_role={role}'
+    region      'us-west-2'
+    format       as JSON {path}
+    timeformat   as 'epochmillisecs'
+""").format(bucket=LOG_DATA, role=IAM_ROLE, path=LOG_PATH)
 
 staging_songs_copy = ("""
-""").format()
+copy staging_songs from {bucket}
+    credentials 'aws_iam_role={role}'
+    region      'us-west-2'
+    format       as JSON 'auto'
+""").format(bucket=SONG_DATA, role=IAM_ROLE)
 
 # FINAL TABLES
 
 songplay_table_insert = ("""
+insert into songplays (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent)
+    select
+        distinct(e.ts)  as start_time, 
+        e.userId        as user_id, 
+        e.level         as level, 
+        s.song_id       as song_id, 
+        s.artist_id     as artist_id, 
+        e.sessionId     as session_id, 
+        e.location      as location, 
+        e.userAgent     as user_agent
+    from staging_events e
+    join staging_songs  s
+    on e.song = s.title and e.artist = s.artist_name and e.page = 'NextSong' and e.length = s.duration
 """)
 
 user_table_insert = ("""
+INSERT INTO users SELECT DISTINCT (user_id)
+        user_id,
+        first_name,
+        last_name,
+        gender,
+        level
+    FROM stage_event
 """)
 
 song_table_insert = ("""
+INSERT INTO songs SELECT DISTINCT (song_id)
+        song_id,
+        title,
+        artist_id,
+        year,
+        duration
+    FROM stage_song
 """)
 
 artist_table_insert = ("""
+INSERT INTO artists SELECT DISTINCT (artist_id)
+        artist_id,
+        artist_name,
+        artist_location,
+        artist_latitude,
+        artist_longitude
+    FROM stage_song
 """)
 
 time_table_insert = ("""
+INSERT INTO time
+        WITH temp_time AS (SELECT TIMESTAMP 'epoch' + (ts/1000 * INTERVAL '1 second') as ts FROM stage_event)
+        SELECT DISTINCT
+        ts,
+        extract(hour from ts),
+        extract(day from ts),
+        extract(week from ts),
+        extract(month from ts),
+        extract(year from ts),
+        extract(weekday from ts)
+        FROM temp_time
 """)
 
 # QUERY LISTS
