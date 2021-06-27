@@ -86,3 +86,6 @@ Validate the tables
 
 
 Delete IAM role and Redshift cluster
+
+## Result:    
+![alt text](./image/songplays.png) 
