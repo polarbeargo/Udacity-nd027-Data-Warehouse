@@ -61,12 +61,16 @@ CREATE TABLE IF NOT EXISTS staging_songs(
 """
 
 songplay_table_create = """
-CREATE TABLE IF NOT EXISTS users(
-        user_id VARCHAR PRIMARY KEY NOT NULL,
-        first_name VARCHAR,
-        last_name VARCHAR,
-        gender VARCHAR,
-        level VARCHAR
+CREATE TABLE IF NOT EXISTS songplays(
+        songplay_id         integer identity(0,1) primary key,
+        start_time          timestamp not null sortkey distkey,
+        user_id             integer not null,
+        level               varchar,
+        song_id             varchar not null,
+        artist_id           varchar not null,
+        session_id          integer,
+        location            varchar,
+        user_agent          varchar
     )
 """
 
@@ -103,13 +107,13 @@ CREATE TABLE IF NOT EXISTS artists(
 time_table_create = ("""
 CREATE TABLE IF NOT EXISTS time
     (
-        start_time  TIMESTAMP PRIMARY KEY SORTKEY,
-        hour        SMALLINT,
-        day         SMALLINT,
-        week        SMALLINT,
-        month       SMALLINT,
-        year        SMALLINT DISTKEY,
-        weekday     SMALLINT
+        start_time  timestamp not null distkey sortkey primary key,
+        hour        integer not null,
+        day         integer not null,
+        week        integer not null,
+        month       integer not null,
+        year        integer not null,
+        weekday     varchar not null
     ) 
 """)
 
@@ -134,8 +138,7 @@ copy staging_songs from {bucket}
 
 songplay_table_insert = ("""
 insert into songplays (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent)
-    select
-        distinct(e.ts)  as start_time, 
+    SELECT DISTINCT TIMESTAMP 'epoch' + (e.ts / 1000) * INTERVAL '1 second' as start_time, 
         e.userId        as user_id, 
         e.level         as level, 
         s.song_id       as song_id, 
@@ -149,13 +152,16 @@ insert into songplays (start_time, user_id, level, song_id, artist_id, session_i
 """)
 
 user_table_insert = ("""
-INSERT INTO users SELECT DISTINCT (user_id)
-        user_id,
-        first_name,
-        last_name,
+insert into users (user_id, first_name, last_name, gender, level)
+    select
+        distinct(userId)    as user_id,
+        firstName           as first_name,
+        lastName            as last_name,
         gender,
         level
-    FROM stage_event
+    from staging_events
+    where user_id is not null
+    and page = 'NextSong'
 """)
 
 song_table_insert = ("""
@@ -165,7 +171,7 @@ INSERT INTO songs SELECT DISTINCT (song_id)
         artist_id,
         year,
         duration
-    FROM stage_song
+    FROM staging_songs
 """)
 
 artist_table_insert = ("""
@@ -175,12 +181,12 @@ INSERT INTO artists SELECT DISTINCT (artist_id)
         artist_location,
         artist_latitude,
         artist_longitude
-    FROM stage_song
+    FROM staging_songs
 """)
 
 time_table_insert = ("""
 INSERT INTO time
-        WITH temp_time AS (SELECT TIMESTAMP 'epoch' + (ts/1000 * INTERVAL '1 second') as ts FROM stage_event)
+        WITH temp_time AS (SELECT TIMESTAMP 'epoch' + (ts/1000 * INTERVAL '1 second') as ts FROM staging_events)
         SELECT DISTINCT
         ts,
         extract(hour from ts),
